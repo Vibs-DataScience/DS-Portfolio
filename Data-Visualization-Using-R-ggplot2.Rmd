@@ -1,0 +1,288 @@
+---
+title: "Data Visualization techniques using R (ggplot2)"
+author: "Vibs"
+date: "March 15, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# This is a demonstration of different visualization techniques using R (ggplot2 package)
+
+We will use 2 datasets for this purpose:
+
+* iris
+* diamonds
+
+I have used the below video from edureka as an inspiration but tried the plots on a different dataset to just try it out with a little bit of customization from my side.
+
+Edureka Tutorial link 
+
+* [ggplot2 Tutorial | ggplot2 In R Tutorial | Data Visualization In R | R Training | Edureka](https://www.youtube.com/watch?v=N5gYo43oLE8)
+
+Let us start with the basic graphs using iris dataset
+
+```{r}
+
+library(ggplot2)
+
+ggplot(iris, aes(y=Petal.Length, x= Petal.Width)) + geom_point()
+
+```
+
+Add color to the aesthetics. it can be added on categorical variable and legend will be auto populated
+
+```{r}
+
+ggplot(iris, aes(y=Petal.Length, x= Petal.Width, col=Species)) + geom_point()
+
+```
+
+Add shape to the aesthetics. it can be added on categorical variable and legend will be auto populated
+
+```{r}
+
+ggplot(iris, aes(y=Petal.Length, x= Petal.Width, col=Species, shape=Species)) + geom_point()
+
+```
+
+Let us move to diamonds dataset to move to the intermediate level of plots
+
+## Histogram
+
+Histogram is used for visualizing continuous variable distribution.
+
+```{r}
+
+library(dplyr)
+
+str(diamonds)
+
+```
+
+Add the number of bins or number of histograms needed
+
+```{r}
+
+ggplot(diamonds, aes(x=price)) +geom_histogram(bins=50)
+
+```
+
+Add color using fill and col to give boundary colors
+
+```{r}
+ggplot(diamonds, aes(x=price)) +geom_histogram(bins=50, fill='palegreen4', col='red')
+
+```
+
+Use fill as an aesthetic (here color is a column name in daiamonds dateset). fill can be used on categorical variables
+
+```{r}
+ggplot(diamonds, aes(x=price,fill=color)) +geom_histogram(bins=50)
+
+```
+
+If we use fill as an attribute in geom_histogram it will override the aesthtic values
+
+```{r}
+ggplot(diamonds, aes(x=price,fill=color)) +geom_histogram(bins=50,fill='palegreen4', col='red')
+
+```
+
+If we use position ='fill' in the geom_histogram function then we get the proportion instead of the count
+
+```{r}
+ggplot(diamonds, aes(x=price,fill=color)) +geom_histogram(bins=50, position='fill')
+
+```
+
+## Bar Plot
+
+Bar plot is used for visualizing categorical variable distribution
+
+Put a categorical variable in aesthetic
+```{r}
+ggplot(diamonds, aes(x=cut)) +geom_bar()
+
+```
+
+Use fill as an aesthetic (here clarity is a column name in daiamonds dateset). fill can be used on categorical variables
+Thus, we can visualize 2 categorical variables in  a single graph.
+
+```{r}
+ggplot(diamonds, aes(x=cut, fill=clarity)) +geom_bar(position = 'fill')
+
+```
+
+## Frequency Polygon
+
+Frequency Polygon as an alternative to histogram for continuous variable distribution
+
+```{r}
+ggplot(diamonds, aes(x=price)) +geom_freqpoly(bins = 50)
+
+```
+
+Play with the size of the lines
+
+```{r}
+ggplot(diamonds, aes(x=price)) +geom_freqpoly(bins = 50, size=2)
+
+```
+
+Add multiple frequency lines based on a catgorical variable using col in the aesthetics
+
+```{r}
+ggplot(diamonds, aes(x=price, col=cut)) +geom_freqpoly(bins = 50, size=1)
+
+
+```
+
+## Box Plots
+
+Box Plots to understand how does a continuous variable change w.r.t a categorical variable
+
+```{r}
+ggplot(diamonds, aes(x=factor(carat), y=price)) +geom_boxplot()
+
+```
+
+How does price (continuous variable) change w.r.t. cut (categorical variable) of the diamonds
+
+```{r}
+ggplot(diamonds, aes(x=cut, y=price)) +geom_boxplot()
+
+```
+
+multi-variate analysis: add color to use 1 more categorical variable. use fill in the aesthetic on the color column
+
+```{r}
+ggplot(diamonds, aes(x=cut, y=price, fill=color)) +geom_boxplot()
+
+```
+
+## Smooth line
+
+Smooth line for continuous variable to continuous variable analysis. grey area shown is the error.
+
+```{r}
+ggplot(diamonds, aes(x=carat, y=price)) +geom_smooth()
+
+```
+
+We can remove the error by using se=FALSE
+```{r}
+ggplot(diamonds, aes(x=carat, y=price)) +geom_smooth(se=FALSE)
+
+```
+
+Add multiple lines using a categorical variable with the color aesthetic
+
+```{r}
+ggplot(diamonds, aes(x=carat, y=price, color=cut)) +geom_smooth(se=FALSE)
+
+```
+
+method = lm means linear model
+Use both point and smooth geometry
+```{r}
+ggplot(diamonds, aes(x=carat, y=price)) + geom_point() +geom_smooth(method='lm',se=FALSE)
+
+```
+
+And we can add a categorical variable as well by using color
+
+```{r}
+ggplot(diamonds, aes(x=carat, y=price, color=cut)) + geom_point() +geom_smooth(method='lm',se=FALSE)
+
+```
+
+Added 1 more categorical variable using shape aesthetic
+
+```{r}
+ggplot(diamonds, aes(x=carat, y=price, color=cut, shape=clarity)) + geom_point() +geom_smooth(method='lm',se=FALSE)
+
+```
+
+This one became too messy. Maybe we should try and ignore putting so many variables in a single plot for the ease of understanding the pattern displayed.
+
+## Faceting (to facet the data into groups)
+
+The previous graph was to chaotic, so we can facet the data into groups based on a categorical variable
+Now instead of having 5 different colored lines and dots oin a single graph
+We will have 5 graphs based on 5 categories of cut column
+
+```{r}
+ggplot(diamonds, aes(x=carat, y=price, color=cut)) + geom_point() +geom_smooth(method='lm',se=FALSE) + facet_grid(.~cut)
+
+```
+
+## Theme Layer for presentation purposes
+
+Store the graph in a object and add labels theme
+
+```{r}
+obj1 <- ggplot(diamonds, aes(x=cut, y=price, fill=color)) +geom_boxplot()
+obj2 <- obj1 + labs(title='My Title',x='my x axis label',y='my y axis label',fill='my legends title')
+obj2
+
+```
+
+Add theme layer to give a theme to the plot
+
+```{r}
+obj3 <- obj2 + theme(panel.background = element_rect(fill='palegreen4'))
+obj3
+
+```
+
+The font of title of the plot can be changed using the below code
+hjust to align the title at the center of the plot
+
+```{r}
+obj4 <- obj3 + theme(plot.title = element_text(hjust = 0.5, face='bold', colour = 'red'))
+obj4
+
+```
+
+Data mapped on y axis is price which is a continuous variable hence we can use scale_y_continuous function to make changes to the scale of y
+Similarly if it was categorical we should have used scale_y_discrete
+Here we want to scale down the outlier values and put the max of 10000
+
+```{r}
+obj4+scale_y_continuous(limits=c(0,10000))
+
+```
+
+Let us try theme on another plot.
+
+```{r}
+g1<- ggplot(diamonds, aes(x=carat, y=price, color=cut)) + geom_point() +geom_smooth(method='lm',se=FALSE) + facet_grid(.~cut)
+g1
+
+```
+
+```{r}
+g2 <- g1+theme(panel.background = element_rect(fill='grey'))
+g2
+
+```
+
+Fill the legend with a background
+```{r}
+g3<- g2 + theme(legend.background = element_rect(fill='grey'))
+g3
+
+```
+
+Plot background
+```{r}
+g3+theme(plot.background = element_rect(fill = 'green'))
+
+```
+
+Thus, we have used almost all basic building blocks of ggplot2 package and are good to go and visualize the world ourselves!
+
+Happy reading,
+
+Vibs!

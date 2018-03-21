@@ -1,0 +1,339 @@
+---
+title: "Deaths-In-US-Cities-Analysis"
+author: "Vibs (Vaibhav Agrawal)"
+date: "March 01, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# The Project
+
+First we needed to understand the data cleansing task.
+
+## This is a demonstration of how to approach a data cleansing task
+
+I will be taking you through the different steps I use typically for the data cleansing task.
+
+It includes the following items:
+
+* Data Quality Check
+* Imputation of data (if needed)
+* Check the imbalance of data
+* Any Other Business
+
+### Data Set Acquisition
+
+The data set that I have acquired for this task is 
+
+* [TABLE III. Deaths in 122 U.S. cities](https://catalog.data.gov/dataset/table-iii-deaths-in-122-u-s-cities)
+
+from the data.gov website.This data set was published by "Centers for Disease Control and Prevention"
+
+As per the website below is the metadata for this data set.
+
+TABLE III. Deaths in 122 U.S. cities Ã¢Â€Â“ 2016. 122 Cities Mortality Reporting System Ã¢Â€Â” Each week, the vital statistics offices of 122 cities across the United States report the total number of death certificates processed and the number of those for which pneumonia or influenza was listed as the underlying or contributing cause of death by age group (Under 28 days, 28 days Ã¢Â€Â“1 year, 1-14 years, 15-24 years, 25-44 years, 45-64 years, 65-74 years, 75-84 years, and Ã¢Â‰Â¥ 85 years). FOOTNOTE: U: Unavailable. Ã¢Â€Â”: No reported cases. * Mortality data in this table are voluntarily reported from 122 cities in the United States, most of which have populations of 100,000 or more. A death is reported by the place of its occurrence and by the week that the death certificate was filed. Fetal deaths are not included. Ã¢Â€  Pneumonia and influenza. Ã‚Â§ Total includes unknown ages.
+
+
+Let us read the data in a data frame
+```{r}
+setwd("D:/Vibs/Personal/Data Science/Tech-Prep/Deaths-In-US-Cities-Analysis")
+
+rawData <- read.csv("./data/TABLE_III._Deaths_in_122_U.S._cities.csv", header = T,na.strings=c("","NA"," "))
+```
+
+Let us now check the data
+
+```{r}
+head(rawData)
+tail(rawData)
+nrow(rawData)
+```
+
+
+There are a total of 19 columns in the data set with 5148 rows.
+Also it is quite visible that there is a definite need of imputation as there are empty columns and NAs sitting in the data.
+
+Let us look at the column types
+
+```{r}
+str(rawData)
+```
+
+We observe that the columns (especially the bins in which age has been divided) as per metadata are not in sync with the data set. Hence we need to consider the new age bins. Also, the columns ending with flag are not very much clear as most of the data seems to be missing. 
+The last category of age "All.causes..by.age..years...LT.1" is also not very clear.
+
+However, we can continue the data cleansing exercise.
+
+Let us go column by column and understand each one.
+
+### Reporting.Area
+
+```{r}
+str(rawData$Reporting.Area)
+
+table(rawData$Reporting.Area)
+
+```
+This shows that this column is a categorical variable as expected with 133 levels. (But the data.gov site mentioned 122 cities. Never the less we will continue)
+Also another point to note is that all the cities have exactly 39 entries (except Lincoln, NC with 28 & Lincoln, NE with 11 entries)
+Thus this column seems statistically good to go.
+
+Let us move to the next column
+
+### MMWR.YEAR
+
+```{r}
+
+str(rawData$MMWR.YEAR)
+
+```
+
+It is an int column and hence is of less value till it is represented as an int. But since it represents an year, hence it makes more sense to convert this to categorical variable so that it can be further analyzed.
+
+```{r}
+
+rawData$MMWR.YEAR <- as.factor(rawData$MMWR.YEAR)
+str(rawData$MMWR.YEAR)
+table(rawData$MMWR.YEAR)
+
+```
+Here we get that this column is having all the 5148 values as 2016 and none of them is missing or NA. hence this column is also statistically cleansed.
+
+Let us move to the third column
+
+### MMWR.WEEK
+
+```{r}
+str(rawData$MMWR.WEEK)
+
+```
+
+It is an int column and hence is of less value till it is represented as an int. But since it represents a week, hence it makes more sense to convert this to categorical variable so that it can be further analyzed.
+
+```{r}
+
+rawData$MMWR.WEEK <- as.factor(rawData$MMWR.WEEK)
+str(rawData$MMWR.WEEK)
+table(rawData$MMWR.WEEK)
+
+```
+
+This shows that each of the week has exactly 132 rows.
+
+let us move to the next column.
+
+### All.causes..by.age..years...All.Ages..
+
+```{r}
+str(rawData$All.causes..by.age..years...All.Ages..)
+
+```
+Also we do observe that few of the values in this column is NA. hence we need to apply imputation techniques on the same.
+
+
+```{r}
+summary(rawData)
+
+```
+
+Here is a study of comparison of 6 different methods used for imputation.
+
+* [Comparison of 6 methods for missing data imputation](https://www.omicsonline.org/open-access/a-comparison-of-six-methods-for-missing-data-imputation-2155-6180-1000224.php?aid=54590)
+
+
+Let us use the kNN imputation technique as that is the one which gives the most appropriate results in most of the cases.
+
+We need to install the library VIM and call it.
+
+```{r}
+
+library(VIM)
+
+imputedRawData <- kNN(rawData, variable = c("All.causes..by.age..years...All.Ages.."), k=5)
+
+```
+Similarly, let us impute the missing data for all the columns where data is missing. (All observations of Location.2 are missing, therefore the variable will not be imputed!)
+
+```{r}
+
+imputedRawData <- kNN(rawData,variable = c("All.causes..by.age..years...All.Ages..","All.causes..by.age..years...All.Ages....flag","All.causes..by.age..years...â..65","All.causes..by.age..years...â..65..flag","All.causes..by.age..years...45â..64","All.causes..by.age..years...45â..64..flag","All.causes..by.age..years...25â..44","All.causes..by.age..years...25â..44..flag","All.causes..by.age..years...1â..24","All.causes..by.age..years...1â..24..flag","All.causes..by.age..years...LT.1","All.causes..by.age..years...LT.1..flag","P.Iâ...Total","P.Iâ...Total..flag","Location.1"))
+
+summary(imputedRawData)
+
+```
+
+Thus we can ssee the all the NA's have been replaced by the imputed values.
+
+Let us move on and cleanse the columns that got created at the last due to imputation
+
+```{r}
+
+imputedRawData<- imputedRawData[,c(1:19)]
+
+```
+
+This completes the first milestone of imputation.
+
+Will resume in next item focussing on other aspects of feature engineering.
+
+
+
+## Now we move onto visualization of the data
+
+For detailed visualization you can refer to "Data-Visualization-Using-R-ggplot2.Rmd" file.
+
+Here I started visualizing the data set.
+
+### First I filtered for the area with maximum number of deaths
+
+```{r}
+
+imputedRawDataOrderAllCausesByAgeYearsAllAges <- imputedRawData[order(imputedRawData$All.causes..by.age..years...All.Ages..),]
+
+#see the top 10 areas with maximum deaths
+tail(imputedRawDataOrderAllCausesByAgeYearsAllAges,10)
+
+```
+
+This shows that the are with maximum number of deaths is "TotalÂ¶"
+
+Let us try to focus on this area itself and take a subset and analyze it
+
+```{r}
+
+maxDeathArea <- subset(imputedRawData, Reporting.Area=='TotalÂ¶')
+
+sum(maxDeathArea$All.causes..by.age..years...All.Ages..)/sum(imputedRawData$All.causes..by.age..years...All.Ages..)
+
+```
+
+This shows that this area alone counts for around 33% of the total deaths. Let us try and understand this in detail.
+
+But we should also first look at top 10 areas with maximum deaths recorded
+
+```{r}
+library(plyr)
+library(dplyr)
+
+subColumnsAreaWise <- imputedRawData[,c("All.causes..by.age..years...All.Ages..","Reporting.Area")]
+subColumnsAreaWise <- unique(subColumnsAreaWise[,1:2])
+subColumnsAreaWise <- group_by(subColumnsAreaWise, All.causes..by.age..years...All.Ages..)
+subColumnsAreaWise$cumDeathsPerArea <- ave(subColumnsAreaWise$All.causes..by.age..years...All.Ages.., subColumnsAreaWise$Reporting.Area, FUN = cumsum)
+subColumnsAreaWise <-  ddply(subColumnsAreaWise, .(Reporting.Area), function(x) x[which.max(x$cumDeathsPerArea),])
+
+subColumnsAreaWise <- subColumnsAreaWise[order(subColumnsAreaWise$All.causes..by.age..years...All.Ages..),]
+#see the top 10 areas with maximum deaths
+maxDeathAreas <- tail(subColumnsAreaWise,10)
+
+sum(maxDeathAreas$cumDeathsPerArea)
+
+sum(maxDeathAreas$cumDeathsPerArea)/sum(imputedRawData$All.causes..by.age..years...All.Ages..)
+
+library(ggplot2)
+
+#Set the R environment to not use scientific notation for bigger numbers
+options("scipen"=100, "digits"=4)
+
+ggplot(data=maxDeathAreas, aes(x=Reporting.Area,y=cumDeathsPerArea)) +
+    geom_bar(stat="identity") + coord_flip() + ylab("# of Deaths")
+
+```
+
+Thus we can see that around 67% of the deaths have occured only in 10 areas and a single area amounts to 33% of the total deaths.
+
+These areas are worth looking further into.
+
+Let us try and find which week had the highest death count for each of these areas and see if there is a relation between the deaths in different areas based on the week.
+
+```{r}
+library(plyr)
+maxdeathWeekPerArea <- imputedRawData[,c("All.causes..by.age..years...All.Ages..","Reporting.Area", "MMWR.WEEK")]
+maxdeathWeekPerArea <- unique(maxdeathWeekPerArea[,1:3])
+maxdeathWeekPerArea <- group_by(maxdeathWeekPerArea, All.causes..by.age..years...All.Ages..)
+maxdeathWeekPerArea <-  ddply(maxdeathWeekPerArea, .(Reporting.Area), function(x) x[which.max(x$All.causes..by.age..years...All.Ages.),])
+
+maxdeathWeekPerTopArea<- as.data.frame(maxdeathWeekPerArea[ which( maxdeathWeekPerArea$Reporting.Area %in% maxDeathAreas$Reporting.Area ), c("Reporting.Area","MMWR.WEEK","All.causes..by.age..years...All.Ages..")])
+
+maxdeathWeekPerTopArea[order(maxdeathWeekPerTopArea$MMWR.WEEK),]
+
+```
+
+Thus, it is evident that 5 out of 10 states which had the maximum number of deaths had highest number of death among itself in the 1st week.
+
+So 1st week is worth exploring. Maybe we can look at the count of deaths across all areas in the 1st week.
+
+```{r}
+
+firstWeekDeath <- subset(imputedRawData, MMWR.WEEK==1)
+
+sum(firstWeekDeath$All.causes..by.age..years...All.Ages..)/sum(imputedRawData$All.causes..by.age..years...All.Ages..)
+
+```
+
+It is only 2% deaths that occured across all areas thus first week doesn't sound to be interesting anymore when we look at the dataset for all areas.
+
+But let us still revisit the five max death areas with highest deaths in 1st week.
+
+```{r}
+
+firstWeek<- as.data.frame(imputedRawData[ which(imputedRawData$Reporting.Area %in% head(maxdeathWeekPerTopArea[order(maxdeathWeekPerTopArea$MMWR.WEEK),], 5)$Reporting.Area), ])
+
+firstWeek <- subset (firstWeek, MMWR.WEEK==1)
+
+setnames(firstWeek, "All.causes..by.age..years...All.Ages..", "AllAges")
+setnames(firstWeek, "All.causes..by.age..years...â..65", "AgeAbove65")
+setnames(firstWeek, "All.causes..by.age..years...45â..64", "Age45To64")
+setnames(firstWeek, "All.causes..by.age..years...25â..44", "Age25To44")
+setnames(firstWeek, "All.causes..by.age..years...1â..24", "Age01To24")
+setnames(firstWeek, "All.causes..by.age..years...LT.1", "AgeBelow01")
+
+firstWeek<- firstWeek[,c("Reporting.Area","AllAges","AgeAbove65","Age45To64","Age25To44","Age01To24","AgeBelow01")]
+
+firstWeek
+
+```
+
+Thus it is evident that maximum deaths occur for these 5 areas in the 1st week between the brackets of above 64 age or from 45 to 64 age group.
+
+None of the other factor seems to influence the deaths.
+
+Let us go back to the area "TotalÂ¶" with maximum (around 33% of the total death count) deaths and analyze it.
+
+```{r}
+
+mostKillerArea <- subset(imputedRawData, Reporting.Area=='TotalÂ¶')
+
+ggplot(mostKillerArea, aes(x=Location.1)) +geom_bar() + coord_flip()
+
+```
+
+The plot clearly depicts that Houston had reported the deaths 10 times followed by newYork and Los Angeles 7 times each. Let us try to focus on these 3 areas and see where we reach.
+
+```{r}
+mostKillerLocationsInMostKillerArea<- as.data.frame(mostKillerArea[ which( mostKillerArea$Location.1 %in% c("Houston, TX\n(29.760803, -95.369506)","Los Angeles, CA\n(34.052238, -118.243344)","New York City, NY\n(40.123164, -75.333718)") ), ])
+
+setnames(mostKillerLocationsInMostKillerArea, "All.causes..by.age..years...All.Ages..", "AllAges")
+setnames(mostKillerLocationsInMostKillerArea, "All.causes..by.age..years...â..65", "AgeAbove65")
+setnames(mostKillerLocationsInMostKillerArea, "All.causes..by.age..years...45â..64", "Age45To64")
+setnames(mostKillerLocationsInMostKillerArea, "All.causes..by.age..years...25â..44", "Age25To44")
+setnames(mostKillerLocationsInMostKillerArea, "All.causes..by.age..years...1â..24", "Age01To24")
+setnames(mostKillerLocationsInMostKillerArea, "All.causes..by.age..years...LT.1", "AgeBelow01")
+
+mostKillerLocationsInMostKillerArea<- mostKillerLocationsInMostKillerArea[,c("Location.1","AllAges","AgeAbove65","Age45To64","Age25To44","Age01To24","AgeBelow01")]
+
+mostKillerLocationsInMostKillerArea
+
+
+
+```
+
+Here also it is seen that maximum deaths occur between the brackets of above 64 age or from 45 to 64 age group.
+
+None of the other factor seems to influence the deaths.
+
+Thus, we close on the analysis for this data set. Will come back with a machine learning problem.
+
+Till then, Happy learning!
+
+Vibs
